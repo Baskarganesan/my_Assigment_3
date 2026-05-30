@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saathi — Kissht Voice Agent Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d12;--bg2:#10151d;--panel:#161d27;--panel2:#1d2630;
+    --ink:#e8edf2;--mute:#94a3b3;--faint:#5e6c7d;--line:#26303c;
+    --mint:#3ee0a3;--mint-d:#1f9c6f;--amber:#f5b748;--coral:#ff6b5e;--violet:#9d8cff;--sky:#52b8ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:'Sora',system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 80% -5%,rgba(62,224,163,.08),transparent 45%),radial-gradient(circle at 0% 100%,rgba(157,140,255,.07),transparent 45%);
+    min-height:100vh;
+  }
+  .app{max-width:1180px;margin:0 auto;padding:28px 22px 60px}
+
+  /* HEADER */
+  .head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;padding-bottom:22px;border-bottom:1px solid var(--line);margin-bottom:28px}
+  .head .ttl{font-weight:800;font-size:clamp(24px,3.5vw,34px);letter-spacing:-.02em;display:flex;align-items:center;gap:12px}
+  .head .ttl .badge{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--mint-d),var(--sky));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#04130c}
+  .head .ttl em{font-style:normal;color:var(--mint)}
+  .head .sub{font-size:13px;color:var(--mute);font-family:'JetBrains Mono',monospace;letter-spacing:.05em;margin-top:6px}
+  .head .meta{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);text-align:right;line-height:1.9}
+  .head .meta b{color:var(--mint)}
+
+  /* SCENARIO BANNER */
+  .scenario{background:linear-gradient(135deg,rgba(62,224,163,.07),rgba(157,140,255,.05));border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin-bottom:26px;display:flex;gap:16px;align-items:flex-start}
+  .scenario .ic{font-size:22px;flex-shrink:0;margin-top:2px}
+  .scenario p{font-size:14.5px;color:#d3dbe4;line-height:1.55;margin:0}
+  .scenario b{color:var(--ink);font-weight:600}
+
+  /* LAYOUT */
+  .stage{display:grid;grid-template-columns:380px 1fr;gap:28px;align-items:start}
+  @media(max-width:900px){.stage{grid-template-columns:1fr;max-width:420px;margin:0 auto}}
+
+  /* PHONE */
+  .phone{background:#04070b;border:2px solid var(--line);border-radius:40px;padding:14px;box-shadow:0 40px 90px rgba(0,0,0,.6);position:sticky;top:20px}
+  @media(max-width:900px){.phone{position:relative;top:0}}
+  .notch{width:130px;height:24px;background:#04070b;border:1px solid var(--line);border-top:none;border-radius:0 0 18px 18px;margin:0 auto 6px}
+  .screen{background:linear-gradient(180deg,#0e141c,#090d13);border-radius:28px;overflow:hidden;display:flex;flex-direction:column;height:600px}
+  .callbar{text-align:center;padding:18px 0 16px;border-bottom:1px solid var(--line);background:rgba(62,224,163,.03)}
+  .callbar .av{width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,var(--mint-d),var(--sky));margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:24px;color:#04130c;box-shadow:0 0 0 0 rgba(62,224,163,.5);animation:ring 2s infinite}
+  @keyframes ring{0%{box-shadow:0 0 0 0 rgba(62,224,163,.4)}70%{box-shadow:0 0 0 14px rgba(62,224,163,0)}100%{box-shadow:0 0 0 0 rgba(62,224,163,0)}}
+  .callbar .nm{font-weight:600;font-size:16px}
+  .callbar .st{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--mint);letter-spacing:.12em;margin-top:5px}
+  .callbar .st .dot{display:inline-block;width:6px;height:6px;background:var(--mint);border-radius:50%;margin-right:5px;vertical-align:middle;animation:blink 1.4s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .convo{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:11px;scroll-behavior:smooth}
+  .convo::-webkit-scrollbar{width:5px}.convo::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .bub{max-width:84%;padding:11px 14px;border-radius:16px;font-size:13.5px;line-height:1.45;animation:rise .35s ease both;position:relative}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .bub .who{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.12em;text-transform:uppercase;opacity:.55;margin-bottom:4px;display:block}
+  .bub.ai{background:var(--panel);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:5px}
+  .bub.user{background:linear-gradient(135deg,#178a5f,var(--mint-d));align-self:flex-end;border-bottom-right-radius:5px;color:#eafff6}
+  .bub.sys{align-self:center;background:rgba(157,140,255,.1);border:1px solid rgba(157,140,255,.3);color:var(--violet);font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.04em;text-align:center;max-width:92%;border-radius:8px;padding:8px 12px}
+  .bub.sys .who{display:none}
+  .typing{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:16px;border-bottom-left-radius:5px;padding:13px 16px;display:flex;gap:4px}
+  .typing span{width:7px;height:7px;background:var(--faint);border-radius:50%;animation:tp 1.2s infinite}
+  .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+  @keyframes tp{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+
+  /* INPUT DOCK */
+  .dock{border-top:1px solid var(--line);padding:12px;background:#0b0f15}
+  .quick{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+  .chip{font-size:11.5px;font-family:'JetBrains Mono',monospace;background:var(--panel2);border:1px solid var(--line);color:var(--mute);padding:7px 11px;border-radius:16px;cursor:pointer;transition:.15s;letter-spacing:.02em}
+  .chip:hover{border-color:var(--mint-d);color:var(--mint);transform:translateY(-1px)}
+  .chip:active{transform:translateY(0)}
+  .inrow{display:flex;gap:8px}
+  .inrow input{flex:1;background:#11161e;border:1px solid var(--line);border-radius:22px;padding:11px 16px;color:var(--ink);font-family:'Sora',sans-serif;font-size:13.5px;outline:none}
+  .inrow input:focus{border-color:var(--mint-d)}
+  .inrow button{background:var(--mint);color:#04130c;border:none;width:42px;height:42px;border-radius:50%;cursor:pointer;font-size:17px;font-weight:700;transition:.15s;flex-shrink:0}
+  .inrow button:hover{transform:scale(1.07)}
+  .inrow button:disabled{background:var(--panel2);color:var(--faint);cursor:default;transform:none}
+
+  /* RIGHT: PRINCIPLES + CONTROLS */
+  .side{display:flex;flex-direction:column;gap:16px}
+  .panel{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .panel h3{font-weight:700;font-size:16px;margin-bottom:4px}
+  .panel .ph{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mint);margin-bottom:16px}
+
+  .principle{display:grid;grid-template-columns:30px 1fr;gap:13px;padding:12px 0;border-bottom:1px solid var(--line);opacity:.4;transition:.4s}
+  .principle:last-child{border:none}
+  .principle.lit{opacity:1}
+  .principle .ic{width:30px;height:30px;border-radius:8px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:14px;transition:.4s}
+  .principle.lit .ic{background:linear-gradient(135deg,var(--mint-d),var(--sky));color:#04130c}
+  .principle h4{font-size:13.5px;font-weight:600;margin-bottom:3px}
+  .principle p{font-size:12px;color:var(--mute);margin:0;line-height:1.45}
+  .principle .tagp{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--violet);margin-top:4px;display:none}
+  .principle.lit .tagp{display:block}
+
+  .controls{display:flex;gap:10px}
+  .controls button{flex:1;font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:11px;border-radius:10px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--mute);transition:.15s;font-weight:600}
+  .controls button:hover{border-color:var(--mint-d);color:var(--mint)}
+  .controls button.primary{background:var(--mint);color:#04130c;border-color:var(--mint)}
+  .controls button.primary:hover{transform:translateY(-1px);color:#04130c}
+
+  /* PLAN CARD (appears at resolution) */
+  .plancard{background:linear-gradient(135deg,rgba(62,224,163,.1),rgba(82,184,255,.05));border:1px solid var(--mint-d);border-radius:12px;padding:18px;display:none}
+  .plancard.show{display:block;animation:rise .5s ease both}
+  .plancard .pt{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mint);margin-bottom:10px}
+  .plancard .line{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px dashed rgba(62,224,163,.2)}
+  .plancard .line:last-child{border:none}
+  .plancard .line b{color:var(--ink)}
+  .plancard .line .v{font-family:'JetBrains Mono',monospace;color:var(--mint)}
+
+  /* COMPLIANCE STRIP */
+  .compliance{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .ctag{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.05em;padding:5px 9px;border-radius:14px;background:rgba(62,224,163,.08);border:1px solid var(--mint-d);color:var(--mint);display:flex;align-items:center;gap:5px}
+
+  .foot{margin-top:30px;padding-top:20px;border-top:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:center;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="head">
+    <div>
+      <div class="ttl"><span class="badge">सा</span> Saathi <em>· Kissht Voice Agent</em></div>
+      <div class="sub">Clickable prototype · voice simulated as text · early-delinquency resolution</div>
+    </div>
+    <div class="meta">
+      Persona: <b>Priya</b> · 4 days past due<br>
+      Use case: <b>servicing + collections</b><br>
+      Mode: <b>inbound · consented</b>
+    </div>
+  </div>
+
+  <div class="scenario">
+    <span class="ic">📞</span>
+    <p><b>The scene:</b> Priya, 29, missed her ₹3,200 EMI four days ago after a medical expense. She's not a willful defaulter — just stressed and avoiding unknown numbers. She calls Kissht's helpline. You play <b>Priya</b>: type a reply or tap a suggested response. Watch Saathi de-escalate, pull her real dues, offer a face-saving plan, and confirm it — while the right panel lights up each design principle as it happens.</p>
+  </div>
+
+  <div class="stage">
+    <!-- PHONE -->
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="callbar">
+          <div class="av">सा</div>
+          <div class="nm">Saathi · Kissht</div>
+          <div class="st"><span class="dot"></span>VOICE CALL · <span id="clock">00:00</span></div>
+        </div>
+        <div class="convo" id="convo"></div>
+        <div class="dock">
+          <div class="quick" id="quick"></div>
+          <div class="inrow">
+            <input id="inp" type="text" placeholder="Type as Priya..." autocomplete="off">
+            <button id="send" title="Send">↑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDE -->
+    <div class="side">
+      <div class="panel">
+        <div class="ph">Live · design principles</div>
+        <h3 style="margin-bottom:16px">What each turn demonstrates</h3>
+        <div class="principle" data-p="disclosure">
+          <div class="ic">🛡️</div>
+          <div><h4>RBI disclosure, opening line</h4><p>Names the NBFC, loan ref & that it's recorded — before anything else.</p><span class="tagp">PATTERN · identify first</span></div>
+        </div>
+        <div class="principle" data-p="oneask">
+          <div class="ic">💬</div>
+          <div><h4>One question, short turn</h4><p>No menus, no monologue. Barge-in-friendly, &lt;35 words.</p><span class="tagp">PATTERN · one ask at a time</span></div>
+        </div>
+        <div class="principle" data-p="empathy">
+          <div class="ic">🤍</div>
+          <div><h4>De-escalate, never pressure</h4><p>Acknowledges stress, removes shame. Anti-harassment made audible.</p><span class="tagp">PATTERN · tone is the product</span></div>
+        </div>
+        <div class="principle" data-p="numbers">
+          <div class="ic">🔢</div>
+          <div><h4>Numbers from the loan core</h4><p>Exact dues pulled from system — never invented by the model.</p><span class="tagp">PATTERN · system owns figures</span></div>
+        </div>
+        <div class="principle" data-p="twoopt">
+          <div class="ic">⚖️</div>
+          <div><h4>At most two options</h4><p>Capped & phrased for the ear — nothing to read or scroll.</p><span class="tagp">PATTERN · working-memory limit</span></div>
+        </div>
+        <div class="principle" data-p="readback">
+          <div class="ic">✅</div>
+          <div><h4>Read back, then commit</h4><p>Repeats the plan and gets an explicit yes — no visual fallback.</p><span class="tagp">PATTERN · read-back confirmation</span></div>
+        </div>
+        <div class="principle" data-p="close">
+          <div class="ic">📩</div>
+          <div><h4>Written confirmation + exit</h4><p>Plan written to ledger, SMS sent, human path noted. Auditable close.</p><span class="tagp">PATTERN · durable record</span></div>
+        </div>
+        <div class="principle" data-p="handoff">
+          <div class="ic">🙋</div>
+          <div><h4>Human handoff, always open</h4><p>Distress / dispute / "give me a person" → instant warm transfer.</p><span class="tagp">PATTERN · never trap the user</span></div>
+        </div>
+      </div>
+
+      <div class="plancard" id="plancard">
+        <div class="pt">✓ Plan created · written to repayment engine</div>
+        <div class="line"><b>Pay today</b><span class="v" id="pp">—</span></div>
+        <div class="line"><b>Remaining</b><span class="v" id="pr">—</span></div>
+        <div class="line"><b>Extra charge</b><span class="v">₹0</span></div>
+        <div class="line"><b>Confirmation</b><span class="v">SMS sent ✓</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">Always enforced</div>
+        <div class="compliance">
+          <span class="ctag">🕗 8AM–7PM only</span>
+          <span class="ctag">🔒 DPDP consent</span>
+          <span class="ctag">🚫 no contact-list</span>
+          <span class="ctag">📼 recorded + logged</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="primary" id="restart">↻ Restart call</button>
+        <button id="auto">▶ Auto-play demo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Kissht Voice Agent — Saathi · clickable prototype (text-simulated voice) · runs fully offline<br>
+    designed on the HelloPM mock-interview spine — why → fork → knife → problem → solution → metrics → risk
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONVERSATION ENGINE
+   A lightweight intent-matcher that mimics the N8N agent's
+   behaviour offline: it tracks call state, pulls "dues" from a
+   mock loan core, offers only pre-approved options, reads back
+   before committing, and hands off on distress/dispute.
+   ============================================================ */
+
+// --- mock loan core (the "system owns the figures" rule) ---
+const LOAN = {
+  name:"Priya", ref:"4471", nbfc:"Si Creva Capital Services",
+  emi:3050, lateFee:150, totalDue:3200, dpd:4,
+  options:{
+    FULL:{payNow:3200, rem:0, label:"pay the full ₹3,200 now and be fully current"},
+    SPLIT:{payNow:1200, rem:2000, label:"pay just ₹1,200 today and split the remaining ₹2,000 across your next two EMIs, no extra charge"}
+  }
+};
+
+// conversation phases
+const PHASE = {GREET:0, ASK_TIME:1, ASK_REASON:2, OFFER:3, CONFIRM:4, DONE:5, HANDOFF:6};
+let state = PHASE.GREET;
+let chosen = null;
+
+const convo = document.getElementById('convo');
+const quick = document.getElementById('quick');
+const inp = document.getElementById('inp');
+const sendBtn = document.getElementById('send');
+let clockT=null, secs=0;
+
+function clock(){ if(clockT) return; clockT=setInterval(()=>{secs++; const m=String(Math.floor(secs/60)).padStart(2,'0'); const s=String(secs%60).padStart(2,'0'); document.getElementById('clock').textContent=`${m}:${s}`;},1000); }
+
+function lite(p){ document.querySelectorAll('.principle').forEach(e=>e.classList.remove('lit')); if(p){const t=document.querySelector(`.principle[data-p="${p}"]`); if(t){t.classList.add('lit'); t.scrollIntoView({block:'nearest',behavior:'smooth'});}} }
+
+function add(who, text){
+  const b=document.createElement('div'); b.className='bub '+who;
+  if(who!=='sys'){ b.innerHTML=`<span class="who">${who==='ai'?'Saathi':'Priya'}</span>${text}`; }
+  else b.textContent=text;
+  convo.appendChild(b); convo.scrollTop=convo.scrollHeight;
+}
+
+function aiSay(text, principle, cb){
+  const t=document.createElement('div'); t.className='typing'; t.innerHTML='<span></span><span></span><span></span>';
+  convo.appendChild(t); convo.scrollTop=convo.scrollHeight;
+  const delay = Math.min(1400, 500 + text.length*9);
+  setTimeout(()=>{ t.remove(); add('ai', text); if(principle) lite(principle); if(cb) cb(); }, delay);
+}
+
+function setChips(arr){ quick.innerHTML=''; arr.forEach(txt=>{ const c=document.createElement('div'); c.className='chip'; c.textContent=txt; c.onclick=()=>handle(txt); quick.appendChild(c); }); }
+
+function lockInput(lock){ inp.disabled=lock; sendBtn.disabled=lock; }
+
+// --- intent helpers ---
+function has(s, words){ s=s.toLowerCase(); return words.some(w=>s.includes(w)); }
+const ANGRY = ["harass","report","police","lawyer","sue","stop calling","leave me","band karo","pareshan","complaint","rude","threat"];
+const HUMAN = ["human","person","agent","manager","real person","aadmi","insaan","kisi se baat"];
+const DISPUTE = ["not my loan","didn't take","galat","wrong","i never","dispute","not mine","fraud"];
+const YES = ["yes","ok","okay","haan","ha","theek","sure","kar do","done","fine","chalega","go ahead","set it","setup","set up"];
+const PICK_SPLIT = ["split","1200","1,200","second","doosra","dusra","option 2","two","baad","installment","emi","thoda"];
+const PICK_FULL = ["full","3200","3,200","first","pehla","whole","pura","poora","option 1","one","abhi pura"];
+
+function handoff(reason){
+  state=PHASE.HANDOFF; lite('handoff'); setChips([]);
+  aiSay("Of course — I'm connecting you to one of our specialists right now, and I'll pass along everything we discussed so you won't have to repeat yourself. Thanks for your patience.", 'handoff', ()=>{
+    add('sys','→ Warm transfer to human (collections L2) · full context attached'); lockInput(true);
+  });
+}
+
+// --- main turn handler ---
+function handle(text){
+  add('user', text); inp.value=''; setChips([]);
+
+  // global escapes — checked every turn (the safety net)
+  if(state!==PHASE.DONE && state!==PHASE.HANDOFF){
+    if(has(text, HUMAN)) return handoff('requested_human');
+    if(has(text, ANGRY)) { lite('handoff'); return aiSay("I completely understand, and I'm sorry this is stressful — I'm not here to pressure you at all. Would it help if I connected you to a human colleague instead?", 'empathy', ()=>setChips(["Yes, a person please","No, it's okay — continue"])); }
+    if(has(text, DISPUTE)) { state=PHASE.HANDOFF; lite('handoff'); return aiSay("Thank you for flagging that — anything about whether the loan is correct should be reviewed by a specialist, not me. Let me transfer you so it's handled properly.", 'handoff', ()=>{ add('sys','→ Disputed account routed to human review'); lockInput(true); }); }
+  }
+
+  switch(state){
+    case PHASE.GREET: // she responded to "is this a good time?"
+      if(has(text,["no","busy","later","baad mein","abhi nahi"])){
+        return aiSay("No problem at all — I'll keep it really short, under two minutes. Is that okay, or should we schedule a better time?", 'empathy', ()=>{ state=PHASE.ASK_REASON; setChips(["Okay, go ahead","Schedule later please"]); });
+      }
+      state=PHASE.ASK_REASON;
+      return aiSay("Thank you. I noticed your EMI was missed a few days ago — totally okay, these things happen. I'm here to help you sort it out, no pressure. Can I ask what made this month tricky?", 'oneask', ()=>setChips(["Medical emergency at home","Salary got delayed","Just forgot the date"]));
+
+    case PHASE.ASK_REASON:
+      if(has(text,["schedule","later"])) return handoff('reschedule_request');
+      state=PHASE.OFFER;
+      return aiSay(`I'm really sorry to hear that. Here's exactly where things stand: your pending amount is ₹${LOAN.totalDue}, that's the ₹${LOAN.emi} EMI plus a ₹${LOAN.lateFee} late fee. Based on your account I can offer a couple of easy ways to fix this — want to hear them?`, 'numbers', ()=>setChips(["Yes, tell me","How much was the penalty again?"]));
+
+    case PHASE.OFFER:
+      if(has(text,["penalty","late fee","again","kitna"])){
+        return aiSay(`Sure — the late fee is ₹${LOAN.lateFee}, on top of your ₹${LOAN.emi} EMI, so ₹${LOAN.totalDue} in total. Shall I share the two options to clear it?`, 'numbers', ()=>setChips(["Yes, the options"]));
+      }
+      // present exactly two options
+      return aiSay(`Option one: ${LOAN.options.FULL.label}. Option two: ${LOAN.options.SPLIT.label}. Which feels easier for you right now?`, 'twoopt', ()=>{ state=PHASE.CONFIRM; setChips(["The second one — ₹1,200 today","Option one — pay it all now"]); });
+
+    case PHASE.CONFIRM:
+      if(has(text, PICK_FULL) && !has(text,PICK_SPLIT)){ chosen='FULL'; }
+      else if(has(text, PICK_SPLIT)){ chosen='SPLIT'; }
+      else if(has(text, YES)){ chosen='SPLIT'; } // default to gentler option
+      else { // didn't understand — one retry (toward the two-strike rule)
+        return aiSay("Sorry, I didn't quite catch that — would you like to pay the full ₹3,200 now, or pay ₹1,200 today and split the rest? Just say one or two.", 'twoopt', ()=>setChips(["One","Two"]));
+      }
+      const o = LOAN.options[chosen];
+      const readback = chosen==='SPLIT'
+        ? `Perfect — so that's ₹${o.payNow} today, and the remaining ₹${o.rem} added across your next two EMIs, with no extra charge. Shall I set that up?`
+        : `Great — so that's the full ₹${o.payNow} now and you'll be completely current. Shall I set that up?`;
+      return aiSay(readback, 'readback', ()=>{ state=PHASE.DONE; setChips(["Yes, set it up","Actually, wait"]); });
+
+    case PHASE.DONE:
+      if(has(text,["wait","no","actually","change","cancel"])){
+        state=PHASE.OFFER;
+        return aiSay("No problem at all — take your time. Would you like me to go over the two options again?", 'empathy', ()=>setChips(["Yes, the options again","Connect me to a person"]));
+      }
+      // commit
+      const opt = LOAN.options[chosen];
+      finalize(opt);
+      return;
+  }
+}
+
+function finalize(opt){
+  setChips([]); lockInput(true);
+  aiSay(`Done! You'll get an SMS right now confirming the plan and a secure payment link. If anything's unclear, just reply or ask for a human anytime. Take care, Priya — and I hope things at home get better soon.`, 'close', ()=>{
+    add('sys','✓ Plan written to repayment engine · ✓ confirmation SMS sent · call ended');
+    // reveal plan card
+    document.getElementById('pp').textContent = '₹'+opt.payNow;
+    document.getElementById('pr').textContent = opt.rem? '₹'+opt.rem+' over 2 EMIs' : '₹0 — fully current';
+    document.getElementById('plancard').classList.add('show');
+    if(clockT){clearInterval(clockT); clockT=null;}
+  });
+}
+
+// --- boot the call ---
+function start(){
+  convo.innerHTML=''; state=PHASE.GREET; chosen=null; secs=0;
+  document.getElementById('clock').textContent='00:00';
+  document.getElementById('plancard').classList.remove('show');
+  lockInput(false); inp.value='';
+  if(clockT){clearInterval(clockT); clockT=null;}
+  add('sys','call connected · inbound · consent on file');
+  setTimeout(()=>{ clock(); aiSay(`Hi, this is Saathi calling on behalf of Kissht about your personal loan ending ${LOAN.ref}. This call is recorded for quality. Is this a good time to talk for two minutes?`, 'disclosure', ()=>setChips(["Yes, go ahead","I'm a bit busy right now"])); }, 400);
+}
+
+// input wiring
+sendBtn.onclick=()=>{ const v=inp.value.trim(); if(v && !inp.disabled) handle(v); };
+inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ const v=inp.value.trim(); if(v && !inp.disabled) handle(v); } });
+document.getElementById('restart').onclick=start;
+
+// auto-play demo path
+const DEMO=["Yes, go ahead","Medical emergency at home","Yes, tell me","The second one — ₹1,200 today","Yes, set it up"];
+document.getElementById('auto').onclick=()=>{
+  start();
+  let i=0;
+  const tick=()=>{ if(i>=DEMO.length) return; setTimeout(()=>{ if(!inp.disabled){ handle(DEMO[i]); i++; tick(); } else { i++; tick(); } }, 2600); };
+  setTimeout(tick, 1800);
+};
+
+start();
+</script>
+</body>
+</html>
